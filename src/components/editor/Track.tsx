@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { MediaItem, MediaType, TrackDropPayload } from './types';
 import { cn } from '@/lib/utils';
 
@@ -12,6 +13,24 @@ interface TrackProps {
 }
 
 export const Track = ({ label, type, clips, onDropItem, onDragStartClip, activeDropIndex, setActiveDropIndex }: TrackProps) => {
+  const pxPerSecond = 50; // visual scale only
+  const minWidth = 96;
+  const [widths, setWidths] = useState<Record<string, number>>({});
+
+  const keyFor = (clip: MediaItem, idx: number) => `${clip.id}-${idx}`;
+  const defaultWidth = (clip: MediaItem) => Math.max(minWidth, (clip.duration ?? 2) * pxPerSecond);
+
+  useEffect(() => {
+    setWidths((prev) => {
+      const next = { ...prev };
+      clips.forEach((c, i) => {
+        const k = keyFor(c, i);
+        if (!(k in next)) next[k] = defaultWidth(c);
+      });
+      return next;
+    });
+  }, [clips]);
+
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
   };
@@ -28,6 +47,25 @@ export const Track = ({ label, type, clips, onDropItem, onDragStartClip, activeD
     }
   };
 
+  const startResize = (e: React.MouseEvent, clip: MediaItem, idx: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const k = keyFor(clip, idx);
+    const startX = e.clientX;
+    const startW = widths[k] ?? defaultWidth(clip);
+
+    const onMove = (ev: MouseEvent) => {
+      const delta = ev.clientX - startX;
+      setWidths((prev) => ({ ...prev, [k]: Math.max(minWidth, startW + delta) }));
+    };
+    const onUp = () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  };
+
   return (
     <div className="rounded-md border p-3 bg-card">
       <div className="flex items-center justify-between mb-2">
@@ -42,42 +80,54 @@ export const Track = ({ label, type, clips, onDropItem, onDragStartClip, activeD
         onDrop={handleDropEmpty}
         aria-label={`${label} drop zone`}
       >
-        {clips.map((clip, idx) => (
-          <div
-            key={clip.id}
-            className={cn(
-              'relative shrink-0 rounded border bg-card px-3 py-2 cursor-grab active:cursor-grabbing',
-              'transition-colors',
-              activeDropIndex === idx ? 'ring-2 ring-primary' : ''
-            )}
-            draggable
-            onDragStart={(e) => onDragStartClip(e, clip, idx, type)}
-            onDragOver={(e) => {
-              e.preventDefault();
-              setActiveDropIndex(idx);
-            }}
-            onDragLeave={() => setActiveDropIndex(null)}
-            onDrop={(e) => {
-              e.preventDefault();
-              const data = e.dataTransfer.getData('application/json');
-              if (!data) return;
-              const payload: TrackDropPayload = JSON.parse(data);
-              if (payload.source === 'library' && payload.track === null) {
-                onDropItem(payload, idx, type);
-              } else if (payload.source === 'track' && payload.track === type) {
-                onDropItem(payload, idx, type);
-              }
-              setActiveDropIndex(null);
-            }}
-          >
-            <div className="text-xs font-medium truncate max-w-[160px]" title={clip.name}>
-              {clip.name}
+        {clips.map((clip, idx) => {
+          const k = keyFor(clip, idx);
+          const w = widths[k] ?? defaultWidth(clip);
+          return (
+            <div
+              key={k}
+              className={cn(
+                'relative shrink-0 rounded border bg-card px-3 py-2 cursor-grab active:cursor-grabbing',
+                'transition-colors group',
+                activeDropIndex === idx ? 'ring-2 ring-primary' : ''
+              )}
+              style={{ width: w }}
+              draggable
+              onDragStart={(e) => onDragStartClip(e, clip, idx, type)}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setActiveDropIndex(idx);
+              }}
+              onDragLeave={() => setActiveDropIndex(null)}
+              onDrop={(e) => {
+                e.preventDefault();
+                const data = e.dataTransfer.getData('application/json');
+                if (!data) return;
+                const payload: TrackDropPayload = JSON.parse(data);
+                if (payload.source === 'library' && payload.track === null) {
+                  onDropItem(payload, idx, type);
+                } else if (payload.source === 'track' && payload.track === type) {
+                  onDropItem(payload, idx, type);
+                }
+                setActiveDropIndex(null);
+              }}
+            >
+              <div className="text-xs font-medium truncate max-w-full pr-4" title={clip.name}>
+                {clip.name}
+              </div>
+              {typeof clip.duration === 'number' && (
+                <div className="text-[10px] text-muted-foreground">{clip.duration.toFixed(1)}s</div>
+              )}
+
+              <div
+                className="absolute right-0 top-0 h-full w-1.5 cursor-col-resize bg-transparent group-hover:bg-primary/30"
+                onMouseDown={(e) => startResize(e, clip, idx)}
+                aria-label="Resize clip"
+                role="separator"
+              />
             </div>
-            {typeof clip.duration === 'number' && (
-              <div className="text-[10px] text-muted-foreground">{clip.duration.toFixed(1)}s</div>
-            )}
-          </div>
-        ))}
+          );
+        })}
 
         {clips.length === 0 && (
           <div className="flex items-center justify-center w-full text-xs text-muted-foreground">
