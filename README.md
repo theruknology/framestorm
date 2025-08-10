@@ -1,73 +1,141 @@
-# Welcome to your Lovable project
 
-## Project info
+# Blend Track Editor
 
-**URL**: https://lovable.dev/projects/5c71572a-9e01-440a-a569-4e092ae6d8dc
+A modern, web-based two-track video and audio editor built with React, TypeScript, Vite, Tailwind CSS, and shadcn-ui. Easily drag and drop video and audio clips, preview your timeline, and export your creation.
 
-## How can I edit this code?
+## Table of Contents
 
-There are several ways of editing your application.
+- [Features](#features)
+- [Demo](#demo)
+- [Project Structure](#project-structure)
+- [Getting Started](#getting-started)
+- [Scripts](#scripts)
+- [Technologies Used](#technologies-used)
+- [UI & Components](#ui--components)
+- [Deployment](#deployment)
+- [Custom Domain](#custom-domain)
+- [License](#license)
 
-**Use Lovable**
+---
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/5c71572a-9e01-440a-a569-4e092ae6d8dc) and start prompting.
+## Features
 
-Changes made via Lovable will be committed automatically to this repo.
+- **Two-track timeline:** Drag and drop video and audio clips to build your timeline.
+- **Media Library:** Preloaded with sample videos and audios, easily extendable.
+- **Resizable Clips:** Adjust the length of clips visually.
+- **Playback & Preview:** Play your timeline with synchronized video and audio.
+- **Export:** Simulated export with user feedback (ready for backend integration).
+- **Modern UI:** Responsive, accessible, and beautiful interface using shadcn-ui and Tailwind CSS.
+- **Confetti Celebration:** Fun confetti animation on successful export.
 
-**Use your preferred IDE**
+## Demo
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+![Editor Screenshot](public/placeholder.svg)  
+*Replace with actual screenshot or GIF.*
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## Project Structure
 
-Follow these steps:
+```
+blend-track-editor/
+├── public/
+│   └── media/
+│       ├── audios/
+│       └── videos/
+├── src/
+│   ├── components/
+│   │   ├── editor/
+│   │   │   ├── MediaLibrary.tsx
+│   │   │   ├── Track.tsx
+│   │   │   └── VideoEditor.tsx
+│   │   └── ui/...
+│   ├── pages/
+│   │   ├── EditorMode.tsx
+│   │   ├── ResultsPage.tsx
+│   │   └── ...
+│   ├── App.tsx
+│   └── main.tsx
+├── package.json
+├── vite.config.ts
+├── tailwind.config.ts
+└── ...
+```
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
+- **`src/components/editor/`**: Core editor logic and UI.
+- **`src/pages/`**: App pages (Editor, Results, etc).
+- **`public/media/`**: Sample media files.
+
+## Getting Started
+
+### Prerequisites
+
+- [Node.js](https://nodejs.org/) (v18+ recommended)
+- [npm](https://www.npmjs.com/) (comes with Node.js)
+
+### Installation
+
+```bash
 git clone <YOUR_GIT_URL>
+cd blend-track-editor
+npm install
+```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### Running Locally
 
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Open [http://localhost:8080](http://localhost:8080) in your browser.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Scripts
 
-**Use GitHub Codespaces**
+- `npm run dev` – Start the development server.
+- `npm run build` – Build for production.
+- `npm run preview` – Preview the production build.
+- `npm run lint` – Lint the codebase.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Technologies Used
 
-## What technologies are used for this project?
+- **React** & **TypeScript** – UI and logic.
+- **Vite** – Fast build tool and dev server.
+- **Tailwind CSS** – Utility-first CSS framework.
+- **shadcn-ui** – Accessible, beautiful UI components.
+- **Radix UI** – Primitives for accessible UI.
+- **TanStack React Query** – Data fetching and caching.
+- **Lucide Icons** – Icon set.
+- **Framer Motion** – Animations.
+- **Other**: date-fns, recharts, and more (see `package.json`).
 
-This project is built with:
+## UI & Components
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+- **VideoEditor**: Main editor interface.
+- **MediaLibrary**: Drag-and-drop media selection.
+- **Track**: Timeline for video/audio clips.
+- **Sidebar**: Navigation.
+- **ResultsPage**: Shows exported video and confetti.
 
-## How can I deploy this project?
+## Deployment
 
-Simply open [Lovable](https://lovable.dev/projects/5c71572a-9e01-440a-a569-4e092ae6d8dc) and click on Share -> Publish.
+You can deploy this project using [Lovable](https://lovable.dev/) or any static hosting provider (Vercel, Netlify, etc).
 
-## Can I connect a custom domain to my Lovable project?
+### Lovable Deployment
 
-Yes, you can!
+1. Open your project on [Lovable](https://lovable.dev/).
+2. Click on **Share → Publish**.
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+### Custom Domain
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+To connect a custom domain on Lovable:
+
+- Go to **Project > Settings > Domains** and click **Connect Domain**.
+- See the [Lovable docs](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide) for details.
+
+## License
+
+MIT (or specify your license here).
+
+---
+
+**Note:**  
+- For backend export functionality, integrate your own server or cloud function.
+- You can extend the media library by adding files to `public/media/`.
