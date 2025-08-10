@@ -30,7 +30,7 @@ A modern, web-based two-track video and audio editor built with React, TypeScrip
 
 ## Demo
 
-![Editor Screenshot](public/placeholder.svg)  
+![Editor Screenshot](public/demo.png)  
 *Replace with actual screenshot or GIF.*
 
 ## Project Structure
