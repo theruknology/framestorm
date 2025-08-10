@@ -5,6 +5,8 @@ import { Track } from './Track';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { Play, Square, Download } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const initialLibrary: MediaItem[] = [
   { id: 'vid-1', type: 'video', name: 'Flower (MP4)', src: '/media/videos/flower.mp4' },
@@ -48,8 +50,11 @@ export const VideoEditor = () => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const recorderRef = useRef<MediaRecorder | null>(null);
   const [videoIndex, setVideoIndex] = useState(0);
   const [audioIndex, setAudioIndex] = useState(0);
+  const { toast } = useToast();
 
   // Preload durations lazily when first seen
   useEffect(() => {
@@ -175,6 +180,81 @@ export const VideoEditor = () => {
 
   const handleStop = () => {
     resetPlayback();
+    if (isRecording && recorderRef.current) {
+      try { recorderRef.current.stop(); } catch {}
+      setIsRecording(false);
+    }
+  };
+
+  const handleExport = async () => {
+    if (!videoRef.current) return;
+    if (videoTrack.length === 0 && audioTrack.length === 0) {
+      toast({ title: 'Nothing to export', description: 'Add at least one clip.', });
+      return;
+    }
+
+    const v = videoRef.current as HTMLVideoElement & { captureStream?: (fps?: number) => MediaStream };
+    const a = audioRef.current as HTMLAudioElement & { captureStream?: () => MediaStream } | null;
+
+    const videoStream: MediaStream | undefined = v.captureStream?.(30);
+    const audioStream: MediaStream | undefined = a?.captureStream ? a.captureStream() : undefined;
+
+    if (!videoStream) {
+      toast({ title: 'Export not supported', description: 'Your browser does not support captureStream().', });
+      return;
+    }
+
+    const combined = new MediaStream();
+    videoStream.getVideoTracks().forEach((t) => combined.addTrack(t));
+    if (audioStream) {
+      audioStream.getAudioTracks().forEach((t) => combined.addTrack(t));
+    }
+
+    const pickMime = () => {
+      const types = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
+      return types.find((t) => (window as any).MediaRecorder?.isTypeSupported?.(t)) || 'video/webm';
+    };
+
+    const mimeType = pickMime();
+    let recorder: MediaRecorder;
+    try {
+      recorder = new MediaRecorder(combined, { mimeType });
+    } catch {
+      toast({ title: 'Failed to start export', description: 'MediaRecorder could not be initialized.' });
+      return;
+    }
+
+    const chunks: Blob[] = [];
+    recorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunks.push(e.data); };
+    recorder.onstop = () => {
+      const blob = new Blob(chunks, { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'export.webm';
+      a.click();
+      URL.revokeObjectURL(url);
+      setIsRecording(false);
+      toast({ title: 'Export complete', description: 'Your video has been downloaded.' });
+    };
+
+    setIsRecording(true);
+    toast({ title: 'Export started', description: 'Rendering timeline in real-time. Keep this tab active.' });
+
+    // Start clean and record
+    resetPlayback();
+    await Promise.resolve();
+
+    recorder.start(250);
+    recorderRef.current = recorder;
+
+    await handlePlay();
+
+    const maxMs = Math.max(totalVideoDuration, totalAudioDuration) * 1000;
+    const totalMs = Math.max(1000, Math.ceil(maxMs) + 800);
+    window.setTimeout(() => {
+      try { recorderRef.current?.stop(); } catch {}
+    }, totalMs);
   };
 
   useEffect(() => {
@@ -212,59 +292,59 @@ export const VideoEditor = () => {
   }, [audioTrack.length, playNextAudio]);
 
   return (
-    <main className="container mx-auto py-6 space-y-6">
+    <main className="container mx-auto py-6 space-y-6 font-sans">
       <header className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold">React Video Editor</h1>
         <p className="text-muted-foreground">Two-track timeline: drag-and-drop video and audio clips.</p>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-4">
-          <MediaLibrary items={library} onDragStart={onLibraryDragStart} />
-        </div>
-
-        <div className="lg:col-span-8 space-y-4">
-          <Card className="p-4">
-            <div className="flex items-center gap-3">
-              <Button onClick={handlePlay} disabled={isPlaying || (videoTrack.length === 0 && audioTrack.length === 0)}>
-                Play
-              </Button>
-              <Button variant="secondary" onClick={handleStop}>Stop</Button>
-              <Separator orientation="vertical" className="h-6" />
-              <div className="text-xs text-muted-foreground">
-                Video: {totalVideoDuration.toFixed(1)}s · Audio: {totalAudioDuration.toFixed(1)}s
-              </div>
+      <div className="space-y-4">
+        <Card className="p-4">
+          <div className="flex items-center gap-3">
+            <Button onClick={handlePlay} disabled={isPlaying || (videoTrack.length === 0 && audioTrack.length === 0)}>
+              <Play className="mr-2 h-4 w-4" /> Play
+            </Button>
+            <Button variant="secondary" onClick={handleStop} disabled={!isPlaying && !isRecording}>
+              <Square className="mr-2 h-4 w-4" /> Stop
+            </Button>
+            <Button variant="outline" onClick={handleExport} disabled={isRecording || (videoTrack.length === 0 && audioTrack.length === 0)}>
+              <Download className="mr-2 h-4 w-4" /> Export
+            </Button>
+            <Separator orientation="vertical" className="h-6" />
+            <div className="text-xs text-muted-foreground">
+              Video: {totalVideoDuration.toFixed(1)}s · Audio: {totalAudioDuration.toFixed(1)}s
             </div>
-            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <video ref={videoRef} controls className="w-full rounded bg-black" playsInline />
-              </div>
-              <div className="flex items-center">
-                <audio ref={audioRef} controls className="w-full" />
-              </div>
-            </div>
-          </Card>
-
-          <div className="space-y-3">
-            <Track
-              label="Video Track"
-              type="video"
-              clips={videoTrack}
-              onDropItem={onDropItem}
-              onDragStartClip={onDragStartClip}
-              activeDropIndex={activeDropIndex}
-              setActiveDropIndex={setActiveDropIndex}
-            />
-            <Track
-              label="Audio Track"
-              type="audio"
-              clips={audioTrack}
-              onDropItem={onDropItem}
-              onDragStartClip={onDragStartClip}
-              activeDropIndex={activeDropIndex}
-              setActiveDropIndex={setActiveDropIndex}
-            />
           </div>
+          <div className="mt-4 grid grid-cols-1 lg:grid-cols-12 gap-4">
+            <div className="lg:col-span-8">
+              <video ref={videoRef} controls className="w-full rounded bg-muted" playsInline />
+              <audio ref={audioRef} className="sr-only" aria-hidden="true" />
+            </div>
+            <div className="lg:col-span-4">
+              <MediaLibrary items={library} onDragStart={onLibraryDragStart} />
+            </div>
+          </div>
+        </Card>
+
+        <div className="space-y-3">
+          <Track
+            label="Video Track"
+            type="video"
+            clips={videoTrack}
+            onDropItem={onDropItem}
+            onDragStartClip={onDragStartClip}
+            activeDropIndex={activeDropIndex}
+            setActiveDropIndex={setActiveDropIndex}
+          />
+          <Track
+            label="Audio Track"
+            type="audio"
+            clips={audioTrack}
+            onDropItem={onDropItem}
+            onDragStartClip={onDragStartClip}
+            activeDropIndex={activeDropIndex}
+            setActiveDropIndex={setActiveDropIndex}
+          />
         </div>
       </div>
     </main>
