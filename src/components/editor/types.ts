@@ -6,6 +6,14 @@ export interface MediaItem {
   name: string;
   src: string;
   duration?: number; // seconds
+  startCut?: number; // start cut time in seconds
+  endCut?: number; // end cut time in seconds
+}
+
+export interface TimelineData {
+  videoTrack: MediaItem[];
+  audioTrack: MediaItem[];
+  totalDuration: number;
 }
 
 export interface TrackDropPayload {

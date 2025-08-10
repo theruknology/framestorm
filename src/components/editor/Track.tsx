@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { MediaItem, MediaType, TrackDropPayload } from './types';
 import { cn } from '@/lib/utils';
+import { Trash2 } from 'lucide-react';
 
 interface TrackProps {
   label: string;
@@ -8,11 +9,21 @@ interface TrackProps {
   clips: MediaItem[];
   onDropItem: (payload: TrackDropPayload, targetIndex: number | null, trackType: MediaType) => void;
   onDragStartClip: (e: React.DragEvent, item: MediaItem, index: number, trackType: MediaType) => void;
+  onDeleteClip: (index: number, trackType: MediaType) => void;
   activeDropIndex: number | null;
   setActiveDropIndex: (i: number | null) => void;
 }
 
-export const Track = ({ label, type, clips, onDropItem, onDragStartClip, activeDropIndex, setActiveDropIndex }: TrackProps) => {
+export const Track = ({ 
+  label, 
+  type, 
+  clips, 
+  onDropItem, 
+  onDragStartClip, 
+  onDeleteClip,
+  activeDropIndex, 
+  setActiveDropIndex 
+}: TrackProps) => {
   const pxPerSecond = 50; // visual scale only
   const minWidth = 96;
   const [widths, setWidths] = useState<Record<string, number>>({});
@@ -112,12 +123,26 @@ export const Track = ({ label, type, clips, onDropItem, onDragStartClip, activeD
                 setActiveDropIndex(null);
               }}
             >
-              <div className="text-xs font-medium truncate max-w-full pr-4" title={clip.name}>
-                {clip.name}
+              <div className="flex items-center justify-between w-full gap-2">
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs font-medium truncate max-w-full pr-4" title={clip.name}>
+                    {clip.name}
+                  </div>
+                  {typeof clip.duration === 'number' && (
+                    <div className="text-[10px] text-muted-foreground">{clip.duration.toFixed(1)}s</div>
+                  )}
+                </div>
+                <button
+                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:text-destructive"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeleteClip(idx, type);
+                  }}
+                  title="Delete clip"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
               </div>
-              {typeof clip.duration === 'number' && (
-                <div className="text-[10px] text-muted-foreground">{clip.duration.toFixed(1)}s</div>
-              )}
 
               <div
                 className="absolute right-0 top-0 h-full w-1.5 cursor-col-resize bg-transparent group-hover:bg-primary/30"

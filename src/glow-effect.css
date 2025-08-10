@@ -1,0 +1,45 @@
+/*
+  Glowing rainbow border animation for chat input/textarea
+*/
+@keyframes rainbow-glow {
+  0% {
+    border-color: #ff00cc;
+    box-shadow: 0 0 12px 2px #ff00cc, 0 0 32px 8px #ff00cc44;
+  }
+  20% {
+    border-color: #3333ff;
+    box-shadow: 0 0 12px 2px #3333ff, 0 0 32px 8px #3333ff44;
+  }
+  40% {
+    border-color: #00ffea;
+    box-shadow: 0 0 12px 2px #00ffea, 0 0 32px 8px #00ffea44;
+  }
+  60% {
+    border-color: #00ff00;
+    box-shadow: 0 0 12px 2px #00ff00, 0 0 32px 8px #00ff0044;
+  }
+  80% {
+    border-color: #ffea00;
+    box-shadow: 0 0 12px 2px #ffea00, 0 0 32px 8px #ffea0044;
+  }
+  100% {
+    border-color: #ff00cc;
+    box-shadow: 0 0 12px 2px #ff00cc, 0 0 32px 8px #ff00cc44;
+  }
+}
+
+.glow-textarea {
+  border-width: 3px !important;
+  border-style: solid !important;
+  animation: rainbow-glow 2.5s linear infinite;
+  transition: box-shadow 0.2s, border-color 0.2s;
+  background-clip: padding-box;
+  position: relative;
+  z-index: 1;
+}
+
+.glow-textarea:focus, .glow-textarea:focus-visible {
+  animation: rainbow-glow 1s linear infinite;
+  box-shadow: 0 0 24px 6px #fff, 0 0 64px 16px #ff00cc88;
+  outline: none !important;
+}
